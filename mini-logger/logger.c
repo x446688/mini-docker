@@ -46,4 +46,4 @@ int logdoc(int level, const char* file, const char* text, ...)
     fclose(fp);
 
     return 1;
-}
+};

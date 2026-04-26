@@ -1,0 +1,1 @@
+docker run --cap-add=SYS_ADMIN --privileged --security-opt seccomp=unconfined --security-opt apparmor=unconfined --cgroupns=host -v `pwd`:/root/mini-docker -it --rm dolphian /bin/bash
