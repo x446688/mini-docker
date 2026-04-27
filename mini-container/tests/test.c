@@ -1,4 +1,4 @@
-#include "../create.h"
+#include "create.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,8 +30,8 @@ int main(int argc, char **argv) {
   config.hostname = "mini";
   config.uid = 0;
   config.mnt = "/tmp/mini-docker";
-  config.cmd = "/bin/sh";
-  config.arg = NULL;
+  config.cmd = "/usr/bin/busybox";
+  config.arg = "sh";
   
   // used for container pid
   int container_pid = 0;
@@ -47,6 +47,8 @@ int main(int argc, char **argv) {
   }
 
   config.hostname = "mini";
+
+  system("./tests/init.sh");
 
   // Initialize a socket pair to communicate with the container
   printf("initializing socket pair...\n");
@@ -90,6 +92,7 @@ int main(int argc, char **argv) {
   exitcode |= container_wait(container_pid);
   printf("container exited\n");
   // Clear resources (cgroups, stack, sockets)
+
   printf("freeing resources...\n");
 
   printf("freeing stack...\n");

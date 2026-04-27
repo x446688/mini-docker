@@ -1,7 +1,5 @@
 FROM debian:latest
-RUN <<EOF
-    apt update -y
-    apt install -y gcc make tree gdb libcap-dev git indent busybox
-EOF
+RUN apt update -y
+RUN apt install -y gcc make tree gdb libcap-dev git indent busybox
 WORKDIR /root/mini-docker
 CMD ["/bin/bash"]
