@@ -1,10 +1,14 @@
 # mini-docker
-First, do this:
-```bash
-./tests/init.sh
+
+1. Run Makefile
 ```
-This ensures that all appropriate files are created for the container.  
-And only then:
-```bash
-make run-current
+make
+```
+2. Execute the program
+```
+./build/mini-docker [ARGS]
+```
+## For example:
+```
+./build/mini-docker --mount mount_pount_path
 ```
