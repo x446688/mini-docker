@@ -6,7 +6,7 @@ on:
     branches: [ "main", "container-daemon", "container-create", "logger" ]
 jobs:
   build:
-    runs-on: ["self-hosted", "ubuntu-latest"]
+    runs-on: [self-hosted, docker-builder]
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
