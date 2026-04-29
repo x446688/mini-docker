@@ -2,9 +2,9 @@ services:
   mini-container:
     build: .
     healthcheck:
-      test: ["CMD", "./build/0.1.0/mini-container", "--mnt=/mnt/mini-docker"]
+      test: ["CMD", "./build/0.1.0/mini-docker", "-m", "/mnt/mini-docker"]
       interval: 5s
-      retries: 3
+      retries: 1
     volumes:
       - .:/root/mini-docker
     cap_add: 

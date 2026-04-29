@@ -12,7 +12,5 @@ debug:
 	$(CC) main.c mini-container/create.c mini-logger/logger.c $(CFLAGS) -g -o build/debug/$(TARGET)-debug $(LDFLAGS)
 clean:
 	rm -rf build
-run-current: all
-	test -f build/$(VERSION)/$(TARGET) && ./build/$(VERSION)/$(TARGET)
-run-debug: debug
-	test -f build/debug/$(TARGET)-debug && ./build/debug/$(TARGET)-debug
+test:
+	./build/$(VERSION)/$(TARGET) -m "/tmp/mini-docker"; cat /var/log/mini-docker.log ; cat /tmp/mini-docker/mini-docker.log
