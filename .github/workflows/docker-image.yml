@@ -3,10 +3,10 @@ on:
   push:
     branches: [ "main", "container-daemon", "container-create", "logger" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "container-daemon", "container-create", "logger" ]
 jobs:
   build:
-    runs-on: debian-latest
+    runs-on: ["self-hosted", "ubuntu-latest"]
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
