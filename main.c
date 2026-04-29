@@ -394,7 +394,7 @@ int main(int argc, char *argv[])
 	}
 	else if (pid == 0){
 
-		wait(nullptr);
+		wait(NULL);
 
 		system("ls");
 		char *cmd[] = { "init.sh", mount_point, NULL };
@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
 	}
 	else {
 
-		wait(nullptr);
+		wait(NULL);
 
 	}
 
