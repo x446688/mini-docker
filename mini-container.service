@@ -1,0 +1,16 @@
+[Unit]
+Description=Example of forking daemon program
+
+[Service]
+Type=forking
+PIDFile=/run/mini-docker/mini-docker.pid
+ExecStart=/usr/bin/mini-docker \
+	--conf_file /etc/mini-docker/mini-docker.conf \
+	--log_file /var/log/mini-docker/mini-docker.log \
+	--pid_file /run/mini-docker/mini-docker.pid \
+	--daemon
+User=daemoner
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target

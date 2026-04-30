@@ -1,0 +1,19 @@
+name: mini-docker test CI
+on:
+  push:
+    branches: [ "main", "container-daemon", "container-create", "logger" ]
+  pull_request:
+    branches: [ "main", "container-daemon", "container-create", "logger" ]
+jobs:
+  build:
+    runs-on: [self-hosted, docker-builder]
+    steps:
+    - name: Checkout 
+      uses: actions/checkout@v4
+    - name: Build and run mini-container
+      run: docker compose up --abort-on-container-exit
+    - name: Clean
+      if: always()
+      run: |
+        docker compose down --volumes --remove-orphans
+        docker image prune -f
