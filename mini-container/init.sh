@@ -12,5 +12,5 @@ if !(ls ${CONTAINER_DIR}); then
         cp "$line" ${CONTAINER_DIR}/${LIBDIR64}/.
     done <$FILE
     rm tmp.txt
-    cp /${LIBDIR}/ld-linux-*.so.* ${CONTAINER_DIR}/${LIBDIR64}
+    cp /${LIBDIR64}/ld-linux-*.so.* ${CONTAINER_DIR}/${LIBDIR64}
 fi
