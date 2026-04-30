@@ -13,4 +13,4 @@ debug:
 clean:
 	rm -rf build
 test: all
-	./build/$(VERSION)/$(TARGET) -m "/tmp/mini-docker"; cat /var/log/mini-docker.log ; cat /tmp/mini-docker/mini-docker.log
+	./build/$(VERSION)/$(TARGET) -m "/tmp/mini-docker"; cat /var/log/mini-docker.log ; cat /tmp/mini-docker/var/log/mini-docker.log
