@@ -23,8 +23,6 @@
 #include <linux/limits.h>
 #include <linux/prctl.h>
 #include <linux/sched.h>
-#define LOGFILE "/var/log/mini-docker.log"
-#define INNER_LOGFILE "./mini-docker.log"
 
 int 
 user_namespace_init(uid_t uid, int fd) {
@@ -70,7 +68,7 @@ user_namespace_init(uid_t uid, int fd) {
 // glibc does not provide a wrapper for it.
 long
 pivot_root(const char *new_root, const char *put_old) {
-  printf("calling pivot_root syscall...");
+  logdoc(LOG_LVL_INFO, LOGFILE,"calling pivot_root syscall...");
   return syscall(SYS_pivot_root, new_root, put_old);
 }
 int
@@ -112,16 +110,11 @@ int
 __on_start (void *arg)
 {
   container_cfg *config = arg;
+  logdoc(LOG_LVL_INFO, LOGFILE, "%s, %s, %s", config->mnt, config->cmd, config->arg);
   logdoc(LOG_LVL_ERROR, LOGFILE, "DEBUG hostname bytes:");
-  for (int i = 0; i < 4; i++) {
-    char buf[64];
-    snprintf(buf, sizeof(buf), "  [%d] = %d (0x%02x) '%c'", 
-              i, (unsigned char)config->hostname[i], 
-              (unsigned char)config->hostname[i],
-              (config->hostname[i] >= 32 && config->hostname[i] < 127) ? config->hostname[i] : '?');
-    logdoc(LOG_LVL_ERROR, LOGFILE, buf);
-  }
   logdoc(LOG_LVL_ERROR,LOGFILE,config->hostname);
+
+  logdoc(LOG_LVL_INFO, LOGFILE, "Setting hostname");
   if (sethostname ("mini", 4))
     {
       logdoc(LOG_LVL_ERROR,LOGFILE,"sethostname failed");
@@ -129,18 +122,24 @@ __on_start (void *arg)
       close (config->fd);
       return -1;
     }
+
+  logdoc(LOG_LVL_INFO, LOGFILE, "Setting mountpoint");
   if (mount_set (config->mnt) ) {
       logdoc(LOG_LVL_ERROR,LOGFILE,"mount failed");
       logdoc(LOG_LVL_ERROR,LOGFILE,strerror(errno));
       close (config->fd);
       return -1;
     }
+
+  logdoc(LOG_LVL_INFO, LOGFILE, "Setting namespace");
   if (user_namespace_init (config->uid, config->fd)) {
       logdoc(LOG_LVL_ERROR,LOGFILE,"failed to init user namespace");
       logdoc(LOG_LVL_ERROR,LOGFILE,strerror(errno));
       close (config->fd);
       return -1;
   }
+
+  logdoc(LOG_LVL_INFO, LOGFILE, "Setting capabilities");
   if (__set_capabilites ()) {
       logdoc(LOG_LVL_ERROR,LOGFILE,"failed to set caps");
       logdoc(LOG_LVL_ERROR,LOGFILE,strerror(errno));
@@ -154,7 +153,8 @@ __on_start (void *arg)
       return -1;
     }
   // argv must be NULL terminated
-  char *argv[] = { config->cmd, config->arg, NULL };
+  char *argv[] = { config->arg, NULL };
+  logdoc(LOG_LVL_INFO,LOGFILE,"Launching execve");
   if (execve (config->cmd, argv, NULL) == -1)
     {
       logdoc(LOG_LVL_ERROR,LOGFILE,"failed to execve");
@@ -166,11 +166,11 @@ __on_start (void *arg)
 
 int 
 cgroups_init(char *hostname, pid_t pid) {
-  printf("begin cgroups_init\n");
+  logdoc(LOG_LVL_INFO, LOGFILE,"begin cgroups_init\n");
   char cgroup_dir[PATH_MAX] = {0};
   cgroups_setting* procs_setting = &(cgroups_setting){.name = CGROUPS_CGROUP_PROCS, .value = ""};
   snprintf(procs_setting->value, CGROUPS_CONTROL_FIELD_SIZE, "%d", pid);
-  printf("creating cgroup settings\n");
+  logdoc(LOG_LVL_INFO, LOGFILE,"creating cgroup settings\n");
   cgroups_setting cgroups_settings[] = {
     {.name = "memory.max",
      .value = CGROUPS_MEMORY_MAX},
@@ -181,9 +181,9 @@ cgroups_init(char *hostname, pid_t pid) {
     *procs_setting};
   logdoc(LOG_LVL_WARNING,LOGFILE,"initializing cgroup_dir...");
   snprintf(cgroup_dir, sizeof(cgroup_dir), "/sys/fs/cgroup/%s", hostname);
-  printf("creating cgroup_dir directory (%s)\n", cgroup_dir);
+  logdoc(LOG_LVL_INFO, LOGFILE,"creating cgroup_dir directory (%s)\n", cgroup_dir);
   if ( mkdir(cgroup_dir, S_IRUSR | S_IWUSR | S_IXUSR) == -1 && errno != EEXIST) {
-    printf("failed to create cgroup_dir: %s\n", strerror(errno));
+    logdoc(LOG_LVL_INFO, LOGFILE,"failed to create cgroup_dir: %s\n", strerror(errno));
     return -1;
   }
   for (int i = 0; i < 4; ++i) {
@@ -202,10 +202,10 @@ user_namespace_prepare_mappings(pid_t pid, int fd) {
   int map_fd = 0;
   int unshared = -1;
   int n;
-  printf("preparing namespace mappings to pid %d and fd %d\n",pid,fd);
+  logdoc(LOG_LVL_INFO, LOGFILE,"preparing namespace mappings to pid %d and fd %d\n",pid,fd);
   
   if ((n = read(fd, &unshared, sizeof(unshared))) != sizeof(unshared)) {
-  	printf("failed to retrieve status from socket: %d vs %d\n", sizeof(unshared), n);
+  	logdoc(LOG_LVL_INFO, LOGFILE,"failed to retrieve status from socket: %d vs %d\n", sizeof(unshared), n);
   	return -1;
   }
    if (unshared != -1) {
@@ -215,7 +215,7 @@ user_namespace_prepare_mappings(pid_t pid, int fd) {
       if (setgroups_fd >= 0) {
           if (write(setgroups_fd, "deny", 4) < 0) {
               // Non-fatal: older kernels may not have this file
-              printf("warning: could not write to setgroups: %m\n");
+              logdoc(LOG_LVL_INFO, LOGFILE,"warning: could not write to setgroups: %m\n");
           }
           close(setgroups_fd);
       }
@@ -229,7 +229,7 @@ user_namespace_prepare_mappings(pid_t pid, int fd) {
       }
 
       if ((map_fd = open(dir, O_WRONLY)) == -1) {
-        printf("error opening map_fd");
+        logdoc(LOG_LVL_INFO, LOGFILE,"error opening map_fd");
         return -1;
       }
 
@@ -238,14 +238,14 @@ user_namespace_prepare_mappings(pid_t pid, int fd) {
     }
   }
   write(fd, &(int){0}, sizeof(int));
-  printf("user namespace mappings prepared...\n");
+  logdoc(LOG_LVL_INFO, LOGFILE,"user namespace mappings prepared...\n");
   return 0;
 }
 
 int 
 cgroups_free (char *hostname) {
   char dir[PATH_MAX] = {0};
-  printf("freeing cgroups...\n");
+  logdoc(LOG_LVL_INFO, LOGFILE,"freeing cgroups...\n");
   snprintf(dir, sizeof(dir), "/sys/fs/cgroup/%s", hostname);
   rmdir(dir);
   return 0;
@@ -257,11 +257,11 @@ container_init (container_cfg *container_config, char* stack)
   int container_pid = 0;
   int flags = CLONE_NEWNS | CLONE_NEWCGROUP | CLONE_NEWPID | CLONE_NEWIPC |
     CLONE_NEWNET | CLONE_NEWUTS;
-  printf("stack at: %p\n", stack);
+  logdoc(LOG_LVL_INFO, LOGFILE,"stack at: %p\n", stack);
   if ((container_pid =
        clone (__on_start, stack, flags | SIGCHLD, container_config)) == -1)
     {
-      printf("failed to clone!\n");
+      logdoc(LOG_LVL_INFO, LOGFILE,"failed to clone!\n");
       return 1;
     }
 
@@ -285,125 +285,61 @@ void
 container_stop (int container_pid) {
   kill(container_pid, SIGKILL);
 }
-// int 
-// mount_set(char *mnt) {
-//   printf("setting mount...\n");
-//   printf("remounting with MS_PRIVATE...\n");
-//   if (mount(NULL, "/", NULL, MS_REC | MS_PRIVATE, NULL)) {
-//     printf("failed to mount /: %m\n");
-//     return -1;
-//   }
-//   printf("remounted\n");
-
-//   printf("creating temporary directory and...\n");
-//   char mount_dir[] = "/tmp/mini-docker.XXXXXX";
-//   if (!mkdtemp(mount_dir)) {
-//     printf("failed to create directory %s: %m\n", mount_dir);
-//     return -1;
-//   }
-
-//   printf("bind mount...\n");
-//   if (mount(mnt, mount_dir, NULL, MS_BIND | MS_PRIVATE, NULL)) {
-//     printf("failed to bind mount on %s: %m", mnt);
-//     return -1;
-//   }
-
-//   printf("creating inner directory...\n");
-//   char inner_mount_dir[] = "/tmp/mini-docker.XXXXXX/oldroot.XXXXXX";
-//   memcpy(inner_mount_dir, mount_dir, sizeof(mount_dir) - 1);
-//   if (!mkdtemp(inner_mount_dir)) {
-//     printf("failed to create inner directory %s: %m\n", inner_mount_dir);
-//     return -1;
-//   }
-
-//   printf("pivot root with %s, %s...\n", mount_dir, inner_mount_dir);
-//   if (pivot_root(mount_dir, inner_mount_dir)) {
-//     printf("failed to pivot root with %s, %s: %m\n", mount_dir,
-//               inner_mount_dir);
-//     return -1;
-//   }
-
-//   printf("unmounting old root...\n");
-//   char *old_root_dir = basename(inner_mount_dir);
-//   char old_root[sizeof(inner_mount_dir) + 1] = {"/"};
-//   char *end = memccpy(&old_root[1], old_root_dir, '\0', sizeof old_root - 1);
-
-//   printf("changing directory to /...\n");
-//   if (chdir("/")) {
-//     printf("failed to chdir to /: %m\n");
-//     return -1;
-//   }
-
-//   printf("unmounting...\n");
-//   if (umount2(old_root, MNT_DETACH)) {
-//     printf("failed to umount %s: %m\n", old_root);
-//     return -1;
-//   }
-
-//   printf("removing temporary directories...\n");
-//   if (rmdir(old_root)) {
-//     printf("failed to rmdir %s: %m\n", old_root);
-//     return -1;
-//   }
-
-//   printf("mount set\n");
-//   return 0;
-// }
 
 int 
 mount_set(char *mnt) {
-  printf("setting mount to %s...\n", mnt);
+  logdoc(LOG_LVL_INFO, LOGFILE,"setting mount to %s...\n", mnt);
   
-  printf("remounting / with MS_PRIVATE...\n");
+  logdoc(LOG_LVL_INFO, LOGFILE,"remounting / with MS_PRIVATE...\n");
   if (mount(NULL, "/", NULL, MS_REC | MS_PRIVATE, NULL)) {
-    printf("failed to remount /: %m\n");
+    logdoc(LOG_LVL_INFO, LOGFILE,"failed to remount /: %m\n");
     return -1;
   }
 
   struct stat st;
   if (stat(mnt, &st) == -1 || !S_ISDIR(st.st_mode)) {
-    printf("error: %s is not a valid directory: %m\n", mnt);
+    logdoc(LOG_LVL_INFO, LOGFILE,"error: %s is not a valid directory: %m\n", mnt);
     return -1;
   }
 
   char oldroot_path[PATH_MAX];
-  snprintf(oldroot_path, sizeof(oldroot_path), "%s/.oldroot", mnt);
+  snprintf( oldroot_path, sizeof(oldroot_path), "%s/.oldroot", mnt);
   
-  printf("creating oldroot directory: %s\n", oldroot_path);
+  logdoc(LOG_LVL_INFO, LOGFILE,"creating oldroot directory: %s\n", oldroot_path);
   if (mkdir(oldroot_path, 0755) == -1 && errno != EEXIST) {
-    printf("failed to create oldroot: %m\n");
+    logdoc(LOG_LVL_INFO, LOGFILE,"failed to create oldroot: %m\n");
     return -1;
   }
 
-  printf("bind-mounting %s to itself...\n", mnt);
+  logdoc(LOG_LVL_INFO, LOGFILE,"bind-mounting %s to itself...\n", mnt);
   if (mount(mnt, mnt, NULL, MS_BIND | MS_PRIVATE, NULL)) {
-    printf("failed to bind mount %s: %m\n", mnt);
+    logdoc(LOG_LVL_INFO, LOGFILE,"failed to bind mount %s: %m\n", mnt);
     rmdir(oldroot_path);
     return -1;
   }
 
-  printf("calling pivot_root(%s, %s)...\n", mnt, oldroot_path);
+  logdoc(LOG_LVL_INFO, LOGFILE,"calling pivot_root(%s, %s)...\n", mnt, oldroot_path);
   if (pivot_root(mnt, oldroot_path)) {
-    printf("pivot_root failed: %m\n");
+    logdoc(LOG_LVL_INFO, LOGFILE,"pivot_root failed: %m\n");
     return -1;
   }
 
-  printf("changing directory to /...\n");
+  logdoc(LOG_LVL_INFO, LOGFILE,"changing directory to /...\n");
   if (chdir("/")) {
-    printf("failed to chdir /: %m\n");
+    logdoc(LOG_LVL_INFO, LOGFILE,"failed to chdir /: %m\n");
     return -1;
   }
 
-  printf("unmounting old root...\n");
+  logdoc(LOG_LVL_INFO, LOGFILE,"unmounting old root...\n");
   if (umount2("/.oldroot", MNT_DETACH)) {
-    printf("warning: failed to umount /.oldroot: %m\n");
+    logdoc(LOG_LVL_INFO, LOGFILE,"warning: failed to umount /.oldroot: %m\n");
   }
   
-  printf("removing oldroot directory...\n");
+  logdoc(LOG_LVL_INFO, LOGFILE,"removing oldroot directory...\n");
   if (rmdir("/.oldroot")) {
-    printf("warning: failed to rmdir /.oldroot: %m\n");
+    logdoc(LOG_LVL_INFO, LOGFILE,"warning: failed to rmdir /.oldroot: %m\n");
   }
 
-  printf("mount set successfully\n");
+  logdoc(LOG_LVL_INFO, LOGFILE,"mount set successfully\n");
   return 0;
 }
