@@ -2,13 +2,26 @@
 
 1. Run Makefile
 ```
-make
+sudo make
+sudo make install
 ```
 2. Execute the program
 ```
-./build/mini-docker [ARGS]
+sudo /usr/bin/mini-docker [ARGS]
 ```
-## For example:
+
+## Available args:
+
+`-h --help` - Print help menu \
+`-m --mount` - Mountpoint \
+`-c --command filename` - Execute the command \
+`-l --log_file filename ` - Write logs to the file \
+`-p --pid_file filename` - PID file used by daemonized app \
+`-d --daemon` - Daemonize this application
+
+## Daemonization:
+
 ```
-./build/mini-docker --mount mount_pount_path
+sudo systemctl start mini-container
+sudo systemctl status mini-container
 ```
