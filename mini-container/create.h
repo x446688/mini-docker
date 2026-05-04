@@ -10,6 +10,9 @@
 #define USER_NAMESPACE_UID_CHILD_RANGE_START 10000
 #define USER_NAMESPACE_UID_CHILD_RANGE_SIZE 2000
 #define CONTAINER_STACK_SIZE 1024 * 1024
+#define LOGFILE "/var/log/mini-docker.log"
+#define INNER_LOGFILE "./mini-docker.log"
+
 typedef struct {
   uid_t uid;
   int fd;
