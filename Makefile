@@ -17,10 +17,6 @@ install:
 	test -d /run/mini-docker || mkdir /run/mini-docker
 	touch /var/log/mini-docker.log
 	chmod -R 775 /var/log/mini-docker.log
-	getent group daemoner || addgroup --system daemoner
-	id daemoner || adduser --system --ingroup daemoner daemoner
-	chown -R root:daemoner /var/log/mini-docker.log
-	chown -R daemoner:daemoner /run/mini-docker
 	chmod 755 /run/mini-docker
 	echo "installed"
 	cp build/$(VERSION)/$(TARGET) /usr/bin/
