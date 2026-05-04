@@ -195,7 +195,7 @@ static void daemonize()
 
     pid = fork();
     if (pid < 0) {
-        logdoc(LOG_LVL_ERROR, LOGFILE, "HEEEELP HEEEELP");
+        logdoc(LOG_LVL_ERROR, LOGFILE, "Error forking: %s", strerror(errno));;
         exit(EXIT_FAILURE);
     }
     if (pid > 0) {
@@ -210,7 +210,7 @@ static void daemonize()
 
     pid = fork();
     if (pid < 0) {
-        logdoc(LOG_LVL_ERROR, LOGFILE, "HEEEELP HEEEELP");
+        logdoc(LOG_LVL_ERROR, LOGFILE, "Error forking: %s", strerror(errno));
         exit(EXIT_FAILURE);
     }
     if (pid > 0) {
@@ -314,7 +314,6 @@ int main(int argc, char *argv[])
         daemonize();
         signal(SIGCHLD, SIG_DFL);
         
-        /* ДЕМОН РЕЖИМ - бесконечный цикл */
         signal(SIGINT, handle_signal);
         signal(SIGHUP, handle_signal);
         
@@ -340,7 +339,6 @@ int main(int argc, char *argv[])
             }
         }
     } else {
-        /* ОБЫЧНЫЙ РЕЖИМ - один раз и выход */
         signal(SIGINT, SIG_DFL);
         signal(SIGHUP, SIG_DFL);
         
