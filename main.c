@@ -143,29 +143,6 @@ int read_conf_file(int reload)
     return ret;
 }
 
-int test_conf_file(char *_conf_file_name)
-{
-    FILE *conf_file = NULL;
-    int ret = -1;
-
-    conf_file = fopen(_conf_file_name, "r");
-    if (conf_file == NULL) {
-        fprintf(stderr, "Can't read config file %s\n", _conf_file_name);
-        return EXIT_FAILURE;
-    }
-
-    ret = fscanf(conf_file, "%d", &delay);
-    if (ret <= 0) {
-        fprintf(stderr, "Wrong config file %s\n", _conf_file_name);
-    }
-
-    fclose(conf_file);
-    if (ret > 0)
-        return EXIT_SUCCESS;
-    else
-        return EXIT_FAILURE;
-}
-
 void handle_signal(int sig)
 {
     if (sig == SIGINT) {
@@ -253,7 +230,6 @@ void print_help(void)
     printf("   -h --help                 Print this help\n");
     printf("   -m --mount                Mountpoint\n");
     printf("   -c --command filename     Execute the command\n");
-    printf("   -t --test_conf filename   Test configuration file\n");
     printf("   -l --log_file  filename   Write logs to the file\n");
     printf("   -d --daemon               Daemonize this application\n");
     printf("   -p --pid_file  filename   PID file used by daemonized app\n");
@@ -265,7 +241,6 @@ int main(int argc, char *argv[])
     static struct option long_options[] = {
         {"command", required_argument, 0, 'c'},
         {"mount", required_argument, 0, 'm'},
-        {"test_conf", required_argument, 0, 't'},
         {"log_file", required_argument, 0, 'l'},
         {"help", no_argument, 0, 'h'},
         {"daemon", no_argument, 0, 'd'},
@@ -278,7 +253,7 @@ int main(int argc, char *argv[])
 
     app_name = argv[0];
 
-    while ((value = getopt_long(argc, argv, "c:m:l:t:p:dh", long_options, &option_index)) != -1) {
+    while ((value = getopt_long(argc, argv, "c:m:l:p:dh", long_options, &option_index)) != -1) {
         switch (value) {
             case 'c':
                 conf_file_name = strdup(optarg);
@@ -293,8 +268,6 @@ int main(int argc, char *argv[])
             case 'p':
                 pid_file_name = strdup(optarg);
                 break;
-            case 't':
-                return test_conf_file(optarg);
             case 'd':
                 start_daemonized = 1;
                 break;
