@@ -8,6 +8,7 @@ ExecStart=/usr/bin/mini-docker \
 	--mount /tmp/mini-docker \
     --log_file /var/log/mini-docker/mini-docker.log \
     --pid_file /run/mini-docker/mini-docker.pid \
+    --command /usr/bin/mini-test \
     --daemon
 TimeoutStartSec=5
 User=root
