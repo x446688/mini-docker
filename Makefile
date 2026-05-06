@@ -2,7 +2,7 @@
 VERSION ?= $(shell cat .version)
 CC = gcc
 TARGET = mini-docker
-CFLAGS ?= -I. -Imini-logger/
+CFLAGS ?= -I. -Imini-logger/ -Imini-container/
 LDFLAGS ?= -lcap
 all: main.c mini-container/create.c mini-container/create.h
 	@if [ ! -f /usr/bin/mini-docker-init ]; then \
@@ -10,7 +10,7 @@ all: main.c mini-container/create.c mini-container/create.h
 		mv /usr/bin/init.sh /usr/bin/mini-docker-init; \
 	fi
 	test -d build/$(VERSION) || mkdir -p build/$(VERSION)
-	gcc -o mini-test tests/mini-test.c
+	$(CC) tests/mini-test.c mini-logger/logger.c $(CFLAGS) -o mini-test $(LDFLAGS)
 	mv mini-test /usr/bin/
 	$(CC) main.c mini-container/create.c mini-logger/logger.c $(CFLAGS) -o build/$(VERSION)/$(TARGET) $(LDFLAGS)
 install:
