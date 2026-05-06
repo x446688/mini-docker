@@ -6,13 +6,18 @@
 #include <stdarg.h>
 
 const char *log_level_strings[] = {
-  "   DEBUG",
-  "    INFO",
-  " WARNING",
-  "   ERROR",
+  "DEBUG",
+  "INFO",
+  "WARNING",
+  "ERROR",
   "CRITICAL",
 };
-
+/*
+  Output information into a logfile.
+  level - one of LOG_LEVEL_DEBUG, LOG_LVL_INFO, LOG_LVL_WARNING, LOG_LVL_ERROR, LOG_LVL_CRITICAL
+  file - name of the logfile
+  text - text with formatting support
+*/
 int logdoc(int level, const char* file, const char* text, ...)
 {
     FILE *fp = fopen(file, "a");

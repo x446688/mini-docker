@@ -15,5 +15,6 @@ jobs:
     - name: Clean
       if: always()
       run: |
+        sudo rm -rf ${{ github.workspace }}/build
         docker compose down --volumes --remove-orphans
         docker image prune -f
