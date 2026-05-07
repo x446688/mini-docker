@@ -41,7 +41,7 @@ int container_start() {
     config.mnt = mount_point;
     
     if (conf_file_name == NULL) {    
-        config.cmd = "/usr/bin/busybox";
+        config.cmd = "/bin/sh";
         config.arg = "sh";
     } else {
         config.cmd = conf_file_name;
