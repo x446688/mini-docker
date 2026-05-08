@@ -12,6 +12,7 @@ ExecStart=/usr/bin/mini-docker \
     --daemon
 TimeoutStartSec=5
 User=root
+ExecReload=/bin/kill -HUP $MAINPID
 
 [Install]
 WantedBy=multi-user.target
