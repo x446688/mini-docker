@@ -23,7 +23,9 @@
 static int stop = 0;
 static int delay = 1;
 static int counter = 0;
-static char *conf_file_name = NULL;
+static pid_t child_pid = 0;
+static pid_t container_pid = 0;
+static char *command_file_name = NULL;
 static char *file_name = NULL;
 static char *pid_file_name = NULL;
 static char *mount_point = NULL;
@@ -35,21 +37,20 @@ int container_start() {
     stack = malloc(CONTAINER_STACK_SIZE);
     container_cfg config = {0};
 
-    logdoc(LOG_LVL_INFO, LOGFILE, "%s %s", file_name, conf_file_name);
+    logdoc(LOG_LVL_INFO, LOGFILE, "%s %s", file_name, command_file_name);
     config.hostname = "mini";
     config.uid = 0;
     config.mnt = mount_point;
     
-    if (conf_file_name == NULL) {    
+    if (command_file_name == NULL) {    
         config.cmd = "/bin/sh";
         config.arg = "sh";
     } else {
-        config.cmd = conf_file_name;
+        config.cmd = command_file_name;
         config.arg = file_name;
     }
     
     printf("%s\n", mount_point);
-    int container_pid = 0;
     int sockets[2] = {0};
     int exitcode = 0;
     char progname[] = "mini-docker";
@@ -114,39 +115,26 @@ int container_start() {
     return exitcode;
 }
 
-int read_conf_file(int reload)
-{
-    FILE *conf_file = NULL;
-    int ret = -1;
-
-    if (conf_file_name == NULL) return 0;
-
-    conf_file = fopen(conf_file_name, "r");
-    if (conf_file == NULL) {
-        syslog(LOG_ERR, "Can not open config file: %s, error: %s",
-                conf_file_name, strerror(errno));
-        return -1;
-    }
-
-    ret = fscanf(conf_file, "%d", &delay);
-    if (ret > 0) {
-        if (reload == 1) {
-            syslog(LOG_INFO, "Reloaded configuration file %s of %s",
-                conf_file_name, app_name);
-        } else {
-            syslog(LOG_INFO, "Configuration of %s read from file %s",
-                app_name, conf_file_name);
-        }
-    }
-
-    fclose(conf_file);
-    return ret;
-}
-
 void handle_signal(int sig)
 {
-    if (sig == SIGINT) {
-        fprintf(stderr, "Debug: stopping daemon ...\n");
+    if (sig == SIGINT || sig == SIGTERM) {
+        fprintf(stderr, "Debug: stopping...\n");
+        if (child_pid > 0) {
+            logdoc(LOG_LVL_INFO, LOGFILE, "Sending SIGINT to child %d", child_pid);
+            kill(child_pid, SIGINT);
+            if (kill(child_pid, 0) == 0) {
+                kill(child_pid, SIGKILL);
+            }
+        }
+        
+        if (container_pid > 0) {
+            logdoc(LOG_LVL_INFO, LOGFILE, "Sending SIGINT to container %d", container_pid);
+            kill(container_pid, SIGINT);
+            if (kill(container_pid, 0) == 0) {
+                kill(container_pid, SIGKILL);
+            }
+        }
+
         if (pid_fd != -1) {
             lockf(pid_fd, F_ULOCK, 0);
             close(pid_fd);
@@ -156,10 +144,9 @@ void handle_signal(int sig)
             unlink(pid_file_name);
         }
         stop = 1;
-        signal(SIGINT, SIG_DFL);
+        exit(0);
     } else if (sig == SIGHUP) {
         fprintf(stderr, "Debug: reloading daemon config file ...\n");
-        read_conf_file(1);
     } else if (sig == SIGCHLD) {
         fprintf(stderr, "Debug: received SIGCHLD signal\n");
     }
@@ -256,7 +243,7 @@ int main(int argc, char *argv[])
     while ((value = getopt_long(argc, argv, "c:m:l:p:dh", long_options, &option_index)) != -1) {
         switch (value) {
             case 'c':
-                conf_file_name = strdup(optarg);
+                command_file_name = strdup(optarg);
                 file_name = strdup(basename(optarg));
                 break;
             case 'm':
@@ -288,6 +275,7 @@ int main(int argc, char *argv[])
         signal(SIGCHLD, SIG_DFL);
         
         signal(SIGINT, handle_signal);
+        signal(SIGTERM, handle_signal);
         signal(SIGHUP, handle_signal);
         
         while (stop == 0) {
@@ -300,20 +288,21 @@ int main(int argc, char *argv[])
             }
             
             if (pid == 0) {
-                char *cmd[] = { "mini-docker-init", mount_point, conf_file_name, NULL };
+                char *cmd[] = { "mini-docker-init", mount_point, command_file_name, NULL };
                 if (execve("/usr/bin/mini-docker-init", cmd, NULL) == -1) {
                     logdoc(LOG_LVL_ERROR, LOGFILE, "Failed to execve: %s", strerror(errno));
                     exit(EXIT_FAILURE);
                 }
             } else {
+                child_pid = pid;
                 wait(NULL);
                 logdoc(LOG_LVL_INFO, LOGFILE, "Calling container_start()");
                 container_start();
             }
         }
     } else {
-        signal(SIGINT, SIG_DFL);
-        signal(SIGHUP, SIG_DFL);
+        signal(SIGINT, handle_signal);
+        signal(SIGHUP, handle_signal);
         
         pid_t pid = fork();
 
@@ -323,18 +312,19 @@ int main(int argc, char *argv[])
         }
         
         if (pid == 0) {
-            char *cmd[] = { "mini-docker-init", mount_point, conf_file_name, NULL };
+            char *cmd[] = { "mini-docker-init", mount_point, command_file_name, NULL };
             if (execve("/usr/bin/mini-docker-init", cmd, NULL) == -1) {
                 logdoc(LOG_LVL_ERROR, LOGFILE, "Failed to execve: %s", strerror(errno));
                 exit(EXIT_FAILURE);
             }
         } else {
+            child_pid = pid;
             wait(NULL);
             logdoc(LOG_LVL_INFO, LOGFILE, "Calling container_start()");
             int result = container_start();
             
             /* Free allocated memory */
-            if (conf_file_name != NULL) free(conf_file_name);
+            if (command_file_name != NULL) free(command_file_name);
             if (file_name != NULL) free(file_name);
             if (log_file_name != NULL) free(log_file_name);
             if (pid_file_name != NULL) free(pid_file_name);
@@ -343,13 +333,13 @@ int main(int argc, char *argv[])
             return result;
         }
     }
-    
-    /* Free allocated memory for daemon mode */
-    if (conf_file_name != NULL) free(conf_file_name);
+
+    if (command_file_name != NULL) free(command_file_name);
     if (file_name != NULL) free(file_name);
     if (log_file_name != NULL) free(log_file_name);
     if (pid_file_name != NULL) free(pid_file_name);
     if (mount_point != NULL) free(mount_point);
 
     return EXIT_SUCCESS;
+
 }
