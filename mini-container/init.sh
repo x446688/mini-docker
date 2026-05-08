@@ -2,7 +2,9 @@
 CONTAINER_DIR=$1
 TEST_FILE=$2
 test -d $CONTAINER_DIR || mkdir $CONTAINER_DIR
-test -f minrootfs.tar.xz || curl -o minrootfs.tar.xz https://mirror.rosalab.ru/rosa/rosa2021.1/iso/ROSA.FRESH.12/rootfs/rootfs-minimal-rosa2021.1_x86_64_2022-11-02.tar.xz
-tar -xvf minrootfs.tar.xz -C $CONTAINER_DIR
+if [ -z "$( ls -A $CONTAINER_DIR )" ]; then
+    test -f minrootfs.tar.xz || curl -o minrootfs.tar.xz https://file-store.rosa.ru/api/v1/file_stores/2de7c1fc0a370043b883337ff57d96f16c40de92
+    tar -xvf minrootfs.tar.xz -C $CONTAINER_DIR
+    rm *.xz
+fi
 cp $TEST_FILE $CONTAINER_DIR/usr/bin
-rm *.xz
