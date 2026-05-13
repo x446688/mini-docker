@@ -65,6 +65,7 @@ int container_start() {
     if (socketpair(AF_LOCAL, SOCK_SEQPACKET, 0, sockets)) {
         printf("failed to initialialize socket pair: %m\n");
         exitcode = 1;
+        free(stack);
         return exitcode;
     }
 
@@ -72,6 +73,7 @@ int container_start() {
     if (fcntl(sockets[0], F_SETFD, FD_CLOEXEC)) {
         printf("failed to socket fcntl: %m\n");
         exitcode = 1;
+        free(stack);
         return exitcode;
     }
     config.fd = sockets[1];
@@ -80,6 +82,7 @@ int container_start() {
     if ((container_pid = container_init(&config, stack + CONTAINER_STACK_SIZE)) == -1) {
         printf("failed to container_init\n");
         exitcode = 1;
+        free(stack);
         return exitcode;
     }
     
@@ -89,6 +92,7 @@ int container_start() {
     if (cgroups_init(config.hostname, container_pid) == -1) {
         printf("failed to initialize cgroups\n");
         exitcode = 1;
+        free(stack);
         return exitcode;
     }
 
@@ -96,6 +100,7 @@ int container_start() {
     if (user_namespace_prepare_mappings(container_pid, sockets[0])) {
         exitcode = 1;
         printf("failed to user_namespace_set_user: %s\nstopping container...\n", strerror(errno));
+        free(stack);
         return exitcode;
     }
     
