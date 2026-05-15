@@ -265,10 +265,10 @@ int main(int argc, char *argv[])
                 break;
             case 'h':
                 print_help();
-                break;
+                return 0;
             case '?':
                 print_help();
-                break;
+                return 0;
             default:
                 break;
         }
