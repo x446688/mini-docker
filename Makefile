@@ -5,10 +5,6 @@ TARGET = mini-docker
 CFLAGS ?= -I. -Imini-logger/ -Imini-container/
 LDFLAGS ?= -lcap
 all: main.c mini-container/create.c mini-container/create.h
-	@if [ ! -f /usr/bin/mini-docker-init ]; then \
-		cp mini-container/init.sh /usr/bin; \
-		mv /usr/bin/init.sh /usr/bin/mini-docker-init; \
-	fi
 	test -d build/$(VERSION) || mkdir -p build/$(VERSION)
 	$(CC) tests/mini-test.c mini-logger/logger.c $(CFLAGS) -o mini-test $(LDFLAGS)
 	mv mini-test /usr/bin/

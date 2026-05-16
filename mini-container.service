@@ -5,10 +5,10 @@ Description=Mini-Docker Daemon
 Type=forking
 PIDFile=/run/mini-docker/mini-docker.pid
 ExecStart=/usr/bin/mini-docker \
-	--mount /tmp/mini-docker \
+	--mount /home/user/container \
     --log_file /var/log/mini-docker/mini-docker.log \
     --pid_file /run/mini-docker/mini-docker.pid \
-    --command /usr/bin/mini-test \
+    --command /bin/mini-test \
     --daemon
 TimeoutStartSec=5
 User=root

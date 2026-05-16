@@ -13,7 +13,8 @@
 #define LOGFILE "/var/log/mini-docker.log"
 #define INNER_LOGFILE "./mini-docker.log"
 
-typedef struct {
+typedef struct
+{
   uid_t uid;
   int fd;
   char *hostname;
@@ -21,24 +22,17 @@ typedef struct {
   char *arg;
   char *mnt;
 } container_cfg;
-typedef struct {
+typedef struct
+{
   char name[CGROUPS_CONTROL_FIELD_SIZE];
   char value[CGROUPS_CONTROL_FIELD_SIZE];
 } cgroups_setting;
-int
-__on_start (void *arg);
-int
-container_init (container_cfg *container_config, char* stack);
-int
-cgroups_free (char *hostname);
-int
-user_namespace_prepare_mappings (pid_t pid, int fd);
-int 
-cgroups_init(char *hostname, pid_t pid);
-void 
-container_stop(int container_pid);
-int 
-container_wait(int container_pid);
-int
-mount_set(char *mnt);
+int __on_start (void *arg);
+int container_init (container_cfg * container_config, char *stack);
+int cgroups_free (char *hostname);
+int user_namespace_prepare_mappings (pid_t pid, int fd);
+int cgroups_init (char *hostname, pid_t pid);
+void container_stop (int container_pid);
+int container_wait (int container_pid);
+int mount_set (char *mnt);
 #endif
