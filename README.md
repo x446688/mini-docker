@@ -19,7 +19,7 @@ sudo /usr/bin/mini-docker [ARGS]
 `-p --pid_file filename` - PID file used by daemonized app \
 `-d --daemon` - Daemonize this application
 
-> Note: The `--mount` option already assumes you have a ready minrootfs environment set up in that directory. Use the bash script `TODO.sh` to generate one if you're unsure. 
+> Note: The `--mount` option already assumes you have a ready minrootfs environment set up in that directory. Use the bash script `minrootfs.sh` to generate one if you're unsure. For example: `./minrootfs.sh /path/to/mount/dir`
 
 ## Daemonization:
 
