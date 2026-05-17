@@ -330,6 +330,7 @@ main (int argc, char *argv[])
       signal (SIGCHLD, SIG_DFL);
     }
   signal (SIGINT, handle_signal);
+  signal (SIGTERM, handle_signal);
   signal (SIGHUP, handle_signal);
   logdoc (LOG_LVL_INFO, LOGFILE, "Calling container_start()");
   int result = container_start ();
