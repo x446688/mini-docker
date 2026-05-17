@@ -5,7 +5,7 @@ Description=Mini-Docker Daemon
 Type=forking
 PIDFile=/run/mini-docker/mini-docker.pid
 ExecStart=/usr/bin/mini-docker \
-	--mount /home/user/container \
+	--mount /tmp/container \
     --log_file /var/log/mini-docker/mini-docker.log \
     --pid_file /run/mini-docker/mini-docker.pid \
     --command /bin/mini-test \
