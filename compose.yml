@@ -1,0 +1,10 @@
+services:
+  mini-container:
+    build: .
+    cap_add: 
+      - SYS_ADMIN
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    cgroup: host

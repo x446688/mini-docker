@@ -1,0 +1,18 @@
+[Unit]
+Description=Mini-Docker Daemon
+
+[Service]
+Type=forking
+PIDFile=/run/mini-docker/mini-docker.pid
+ExecStart=/usr/bin/mini-docker \
+	--mount /tmp/container \
+    --log_file /var/log/mini-docker/mini-docker.log \
+    --pid_file /run/mini-docker/mini-docker.pid \
+    --command /bin/mini-test \
+    --daemon
+TimeoutStartSec=5
+User=root
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target
