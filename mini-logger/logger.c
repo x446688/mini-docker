@@ -19,58 +19,62 @@ const char *log_level_strings[] = {
   file - name of the logfile
   text - text with formatting support
 */
-int
-logdoc (int level, const char *file, const char *text, ...)
+int logdoc(int level, const char* file, const char* text, ...)
 {
-  FILE *fp = fopen (file, "a");
-  if (fp == NULL)
-    {
-      if (errno == ENOENT)
-        {
-          printf ("Error: Bad path or symbolic link.\n");
+    
+
+    FILE *fp = fopen(file, "a");
+    if (fp == NULL) {
+        if (errno == ENOENT) {
+            printf("Error: Bad path or symbolic link.\n");
+        } else if (errno == EACCES) {
+            printf("Error: Permission denied.\n");
+        } else {
+            printf("Error: %s\n", strerror(errno));
         }
-      else if (errno == EACCES)
-        {
-          printf ("Error: Permission denied.\n");
-        }
-      else
-        {
-          printf ("Error: %s\n", strerror (errno));
-        }
-      return -1;
+        return -1;
+    }
+
+    time_t now;
+    if (time(&now) == (time_t)-1) {
+        printf("Error: Failed to get current time: %s\n", strerror(errno));
+        fclose(fp);
+        return -1;
+    }
+    
+    struct tm *local = localtime(&now);
+    if (local == NULL) {
+        printf("Error: Failed to convert time to local time: %s\n", strerror(errno));
+        fclose(fp);
+        return -1;
+    }
+    
+    char timeStr[32];
+    if (strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", local) == 0) {
+        printf("Error: Failed to format time string\n");
+        fclose(fp);
+        return -1;
     }
 
     va_list args;
     va_start(args, text);
 
-    time_t now;
-    time(&now);
-    char timeStr[32];
-    struct tm *local = localtime(&now);
-    if (local == NULL) {
-        fprintf(stderr, "Error: localtime() failed: %s\n", strerror(errno));
+    if (fprintf(fp, "[%s] [%s] ", timeStr, log_level_strings[level]) < 0 ||
+        vfprintf(fp, text, args) < 0 ||
+        fprintf(fp, "\n") < 0) 
+    {
+        printf("Error: Failed to write log prefix: %s\n", strerror(errno));
         va_end(args);
         fclose(fp);
         return -1;
     }
+    
+    va_end(args);
+    
+    if (fclose(fp) == EOF) {
+        printf("Error: Failed to close log file: %s\n", strerror(errno));
+        return -1;
+    }
 
-  if (strftime(timeStr, sizeof(timeStr), "%Y-%m-%d %H:%M:%S", local) == 0) {
-      fprintf(stderr, "Error: strftime() buffer too small or formatting failed\n");
-      va_end(args);
-      fclose(fp);
-      return -1;
-  }
-
-  if (fprintf(fp, "[%s] [%s] ", timeStr, log_level_strings[level]) < 0 || // Prefix
-      vfprintf(fp, text, args) < 0 || // Variadic print
-      fprintf(fp, "\n") < 0) {
-      va_end(args);
-      if (fclose(fp) == EOF) {
-          fprintf(stderr, "Error: fclose() failed: %s\n", strerror(errno));
-          return -1; 
-      } 
-      return -1;
-  }
-
-  return 1;
-};
+    return 1;
+}

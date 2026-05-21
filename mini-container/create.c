@@ -203,12 +203,12 @@ __on_start (void *arg)
 int
 cgroups_init (char *hostname, pid_t pid)
 {
-  logdoc (LOG_LVL_INFO, LOGFILE, "begin cgroups_init\n");
+  logdoc (LOG_LVL_INFO, LOGFILE, "begin cgroups_init");
   char cgroup_dir[PATH_MAX] = { 0 };
   cgroups_setting *procs_setting = &(cgroups_setting) {.name =
       CGROUPS_CGROUP_PROCS,.value = "" };
   snprintf (procs_setting->value, CGROUPS_CONTROL_FIELD_SIZE, "%d", pid);
-  logdoc (LOG_LVL_INFO, LOGFILE, "creating cgroup settings\n");
+  logdoc (LOG_LVL_INFO, LOGFILE, "creating cgroup settings");
   cgroups_setting cgroups_settings[] = {
     {.name = "memory.max",
      .value = CGROUPS_MEMORY_MAX},
@@ -220,12 +220,12 @@ cgroups_init (char *hostname, pid_t pid)
   };
   logdoc (LOG_LVL_WARNING, LOGFILE, "initializing cgroup_dir...");
   snprintf (cgroup_dir, sizeof (cgroup_dir), "/sys/fs/cgroup/%s", hostname);
-  logdoc (LOG_LVL_INFO, LOGFILE, "creating cgroup_dir directory (%s)\n",
+  logdoc (LOG_LVL_INFO, LOGFILE, "creating cgroup_dir directory (%s)",
           cgroup_dir);
   if (mkdir (cgroup_dir, S_IRUSR | S_IWUSR | S_IXUSR) == -1
       && errno != EEXIST)
     {
-      logdoc (LOG_LVL_INFO, LOGFILE, "failed to create cgroup_dir: %s\n",
+      logdoc (LOG_LVL_INFO, LOGFILE, "failed to create cgroup_dir: %s",
               strerror (errno));
       return -1;
     }
@@ -250,12 +250,12 @@ user_namespace_prepare_mappings (pid_t pid, int fd)
   int unshared = -1;
   int n;
   logdoc (LOG_LVL_INFO, LOGFILE,
-          "preparing namespace mappings to pid %d and fd %d\n", pid, fd);
+          "preparing namespace mappings to pid %d and fd %d", pid, fd);
 
   if ((n = read (fd, &unshared, sizeof (unshared))) != sizeof (unshared))
     {
       logdoc (LOG_LVL_INFO, LOGFILE,
-              "failed to retrieve status from socket: %d vs %d\n",
+              "failed to retrieve status from socket: %d vs %d",
               sizeof (unshared), n);
       return -1;
     }
@@ -271,7 +271,7 @@ user_namespace_prepare_mappings (pid_t pid, int fd)
             {
               // Non-fatal: older kernels may not have this file
               logdoc (LOG_LVL_INFO, LOGFILE,
-                      "warning: could not write to setgroups: %m\n");
+                      "warning: could not write to setgroups: %m");
             }
           close (setgroups_fd);
         }
@@ -294,13 +294,13 @@ user_namespace_prepare_mappings (pid_t pid, int fd)
               return -1;
             }
 
-          dprintf (map_fd, "0 0 2000\n");
+          dprintf (map_fd, "0 0 2000");
           close (map_fd);
         }
     }
   write (fd, &(int)
          { 0 }, sizeof (int));
-  logdoc (LOG_LVL_INFO, LOGFILE, "user namespace mappings prepared...\n");
+  logdoc (LOG_LVL_INFO, LOGFILE, "user namespace mappings prepared...");
   return 0;
 }
 
@@ -308,7 +308,7 @@ int
 cgroups_free (char *hostname)
 {
   char dir[PATH_MAX] = { 0 };
-  logdoc (LOG_LVL_INFO, LOGFILE, "freeing cgroups...\n");
+  logdoc (LOG_LVL_INFO, LOGFILE, "freeing cgroups...");
   snprintf (dir, sizeof (dir), "/sys/fs/cgroup/%s", hostname);
   rmdir (dir);
   return 0;
@@ -320,11 +320,11 @@ container_init (container_cfg *container_config, char *stack)
   int container_pid = 0;
   int flags = CLONE_NEWNS | CLONE_NEWCGROUP | CLONE_NEWPID | CLONE_NEWIPC |
     CLONE_NEWNET | CLONE_NEWUTS;
-  logdoc (LOG_LVL_INFO, LOGFILE, "stack at: %p\n", stack);
+  logdoc (LOG_LVL_INFO, LOGFILE, "stack at: %p", stack);
   if ((container_pid =
        clone (__on_start, stack, flags | SIGCHLD, container_config)) == -1)
     {
-      logdoc (LOG_LVL_INFO, LOGFILE, "failed to clone!\n");
+      logdoc (LOG_LVL_INFO, LOGFILE, "failed to clone!");
       return 1;
     }
 
@@ -354,12 +354,12 @@ container_stop (int container_pid)
 int
 mount_set (char *mnt)
 {
-  logdoc (LOG_LVL_INFO, LOGFILE, "setting mount to %s...\n", mnt);
+  logdoc (LOG_LVL_INFO, LOGFILE, "setting mount to %s...", mnt);
 
-  logdoc (LOG_LVL_INFO, LOGFILE, "remounting / with MS_PRIVATE...\n");
+  logdoc (LOG_LVL_INFO, LOGFILE, "remounting / with MS_PRIVATE...");
   if (mount (NULL, "/", NULL, MS_REC | MS_PRIVATE, NULL))
     {
-      logdoc (LOG_LVL_INFO, LOGFILE, "failed to remount /: %m\n");
+      logdoc (LOG_LVL_INFO, LOGFILE, "failed to remount /: %m");
       return -1;
     }
 
@@ -367,58 +367,58 @@ mount_set (char *mnt)
   if (stat (mnt, &st) == -1 || !S_ISDIR (st.st_mode))
     {
       logdoc (LOG_LVL_INFO, LOGFILE,
-              "error: %s is not a valid directory: %m\n", mnt);
+              "error: %s is not a valid directory: %m", mnt);
       return -1;
     }
 
   char oldroot_path[PATH_MAX];
   snprintf (oldroot_path, sizeof (oldroot_path), "%s/.oldroot", mnt);
 
-  logdoc (LOG_LVL_INFO, LOGFILE, "creating oldroot directory: %s\n",
+  logdoc (LOG_LVL_INFO, LOGFILE, "creating oldroot directory: %s",
           oldroot_path);
   if (mkdir (oldroot_path, 0755) == -1 && errno != EEXIST)
     {
-      logdoc (LOG_LVL_INFO, LOGFILE, "failed to create oldroot: %m\n");
+      logdoc (LOG_LVL_INFO, LOGFILE, "failed to create oldroot: %m");
       return -1;
     }
 
-  logdoc (LOG_LVL_INFO, LOGFILE, "bind-mounting %s to itself...\n", mnt);
+  logdoc (LOG_LVL_INFO, LOGFILE, "bind-mounting %s to itself...", mnt);
   if (mount (mnt, mnt, NULL, MS_BIND | MS_PRIVATE, NULL))
     {
-      logdoc (LOG_LVL_INFO, LOGFILE, "failed to bind mount %s: %m\n", mnt);
+      logdoc (LOG_LVL_INFO, LOGFILE, "failed to bind mount %s: %m", mnt);
       rmdir (oldroot_path);
       return -1;
     }
 
-  logdoc (LOG_LVL_INFO, LOGFILE, "calling pivot_root(%s, %s)...\n", mnt,
+  logdoc (LOG_LVL_INFO, LOGFILE, "calling pivot_root(%s, %s)...", mnt,
           oldroot_path);
   if (pivot_root (mnt, oldroot_path))
     {
-      logdoc (LOG_LVL_INFO, LOGFILE, "pivot_root failed: %m\n");
+      logdoc (LOG_LVL_INFO, LOGFILE, "pivot_root failed: %m");
       return -1;
     }
 
-  logdoc (LOG_LVL_INFO, LOGFILE, "changing directory to /...\n");
+  logdoc (LOG_LVL_INFO, LOGFILE, "changing directory to /...");
   if (chdir ("/"))
     {
-      logdoc (LOG_LVL_INFO, LOGFILE, "failed to chdir /: %m\n");
+      logdoc (LOG_LVL_INFO, LOGFILE, "failed to chdir /: %m");
       return -1;
     }
 
-  logdoc (LOG_LVL_INFO, LOGFILE, "unmounting old root...\n");
+  logdoc (LOG_LVL_INFO, LOGFILE, "unmounting old root...");
   if (umount2 ("/.oldroot", MNT_DETACH))
     {
       logdoc (LOG_LVL_INFO, LOGFILE,
-              "warning: failed to umount /.oldroot: %m\n");
+              "warning: failed to umount /.oldroot: %m");
     }
 
-  logdoc (LOG_LVL_INFO, LOGFILE, "removing oldroot directory...\n");
+  logdoc (LOG_LVL_INFO, LOGFILE, "removing oldroot directory...");
   if (rmdir ("/.oldroot"))
     {
       logdoc (LOG_LVL_INFO, LOGFILE,
-              "warning: failed to rmdir /.oldroot: %m\n");
+              "warning: failed to rmdir /.oldroot: %m");
     }
 
-  logdoc (LOG_LVL_INFO, LOGFILE, "mount set successfully\n");
+  logdoc (LOG_LVL_INFO, LOGFILE, "mount set successfully");
   return 0;
 }

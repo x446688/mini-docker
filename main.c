@@ -172,7 +172,7 @@ handle_signal (int sig)
         }
       if (pid_file_name != NULL)
         {
-          logdoc (LOG_LVL_INFO, LOGFILE, "DEBUG: unlinking %s\n",
+          logdoc (LOG_LVL_INFO, LOGFILE, "DEBUG: unlinking %s",
                   pid_file_name);
           unlink (pid_file_name);
         }
@@ -238,7 +238,7 @@ daemonize ()
 
   if (pid_file_name != NULL)
     {
-      logdoc (LOG_LVL_INFO, LOGFILE, "%s\n", pid_file_name);
+      logdoc (LOG_LVL_INFO, LOGFILE, "%s", pid_file_name);
       char str[256];
       pid_fd = open (pid_file_name, O_RDWR | O_CREAT, 0640);
       if (pid_fd < 0)
