@@ -3,11 +3,14 @@
 #include "logger.h"
 #define LOGFILE "/var/log/mini-docker.log"
 
-int main() {
-    int counter = 0;
-    while (1) {
-        logdoc(LOG_LVL_INFO, LOGFILE, "Debug: %d", counter);
-        counter++;
-        sleep(2);
+int
+main ()
+{
+  int counter = 0;
+  while (1)
+    {
+      logdoc (LOG_LVL_INFO, LOGFILE, "Debug: %d", counter);
+      counter++;
+      sleep (2);
     }
 }
